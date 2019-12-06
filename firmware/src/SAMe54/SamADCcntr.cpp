@@ -51,13 +51,22 @@ void CSamADCchan::SetRawBinVal(int RawVal)
      //select one chanel and no switching beetwen mes:
      m_pCont->SelectInput(m_posIN, m_negIN);
 
+     int rv=m_pCont->SingleConv();
+     if(0==nMesCnt || 0==alpha || 1==alpha)
+     {
+         CADchan::SetRawBinVal(rv);
+         return rv;
+     }
+
      //measure and average:
-     float val=m_pCont->SingleConv();
+     float val=rv;//m_pCont->SingleConv();
      for(int i=0; i<nMesCnt; i++)
      {
          val=alpha*val +(1.0f-alpha)*(m_pCont->SingleConv());
      }
-     return (int)val;
+     rv=(int)val;
+     CADchan::SetRawBinVal(rv);
+     return rv;
  }
 
 

@@ -17,7 +17,7 @@ Copyright (c) 2019 Panda Team
 
 enum class typeSamADC{Adc0, Adc1};
 
-enum class typeSamADCmuxpos : int {AIN0=0, AIN1, AIN2, AIN3, AIN4, AIN5, AIN6, AIN7, SCALEDCOREVCC=0x18};
+enum class typeSamADCmuxpos : int {AIN0=0, AIN1, AIN2, AIN3, AIN4, AIN5, AIN6, AIN7, SCALEDCOREVCC=0x18, PTAT=0x1C, CTAT=0x1D};
 enum class typeSamADCmuxneg : int {none=-1, AIN0=0, AIN1, AIN2, AIN3, AIN4, AIN5, AIN6, AIN7};
 
 

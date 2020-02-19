@@ -91,6 +91,13 @@ public:
      */
     void Init(int bridge, int offsets[4], int gains[4], double transmissions[4]);
 
+    /**
+     * \brief Set sample rate. Default value is 48000
+     *
+     * @param rate - new sample rate
+     * @return false on wrong rate value requested
+     */
+    bool SetSampleRate(int rate);
 
     /**
      * \brief Read sensors callback function pointer

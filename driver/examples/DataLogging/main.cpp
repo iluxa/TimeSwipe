@@ -98,8 +98,6 @@ int main(int argc, char *argv[])
         exit(1);
     };
 
-    // Board Start
-
     bool ret = tswipe.onButton([&](bool pressed, unsigned count) {
         std::cout << "Button: " <<  (pressed ? "pressed":"released") << std::endl;
     });
@@ -115,6 +113,10 @@ int main(int argc, char *argv[])
         std::cerr << "onError init failed" << std::endl;
         return 1;
     }
+
+    tswipe.SetSampleRate(24000);
+
+    // Board Start
 
     ret = tswipe.Start([&](auto&& records, uint64_t errors) {
             for (size_t i = 0; i < records.size(); i++) {

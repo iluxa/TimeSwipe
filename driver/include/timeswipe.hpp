@@ -169,6 +169,7 @@ public:
      */
     bool Stop();
 
+    static bool resample_log;
 private:
     std::unique_ptr<TimeSwipeImpl> _impl;
 

@@ -21,7 +21,7 @@ static int getGCD ( int num1, int num2 )
 }
 
 std::vector<Record> TimeSwipeResampler::Resample(std::vector<Record>&& records) {
-    if (records.empty()) return;
+    if (records.empty()) return std::vector<Record>();
     // TODO: optimization: eliminate copying
     for (const auto& r: records) {
         for (int i = 0; i < 4; i++) {
@@ -50,9 +50,9 @@ std::vector<Record> TimeSwipeResampler::Resample(std::vector<Record>&& records) 
     std::vector<Record> out;
     auto sz = y[0].size();
     // additional pad stays in buffer
-    int pad = 20;
+    unsigned pad = 20;
     for (int j = 0; j < 4; j++) {
-        if (buffers[j].size() > pad*2) buffers[j].erase(buffers[j].begin(), buffers[j].begin() + buffers[j].size()-pad*2);
+        if (buffers[j].size() > pad) buffers[j].erase(buffers[j].begin(), buffers[j].begin() + buffers[j].size()-pad);
     }
     // Remove results related to pad
     int rem_pad = state->outputSize * pad / inputSize;
@@ -204,6 +204,11 @@ ResamplerState::ResamplerState(int upFactor, int downFactor, size_t inputSize) {
   firlsAmplitudeV.assign ( firlsAmplitude, firlsAmplitude + 4 );
   vector<double> coefficients;
   firls ( length - 1, firlsFreqsV, firlsAmplitudeV, coefficients );
+  if (TimeSwipe::resample_log) {
+      printf("resample: up: %d down: %d inputSize: %u coefficients:", upFactor, downFactor, inputSize);
+      for (const auto& c: coefficients) printf(" %f",c);
+      printf("\n");
+  }
   vector<double> window;
   kaiser ( length, bta, window );
   int coefficientsSize = coefficients.size();

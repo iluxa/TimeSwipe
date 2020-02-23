@@ -8,6 +8,8 @@
 #include "reader.hpp"
 #include "timeswipe_resampler.hpp"
 
+bool TimeSwipe::resample_log = false;
+
 class TimeSwipeImpl {
     static std::mutex startStopMtx;
     static TimeSwipeImpl* startedInstance;

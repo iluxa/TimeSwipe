@@ -234,7 +234,7 @@ the original version of this function.
     results.resize(resultsCount);
 
     // run filtering
-    int numSamplesComputed = theResampler.apply(inputPadded, 
+    /*int numSamplesComputed =*/ theResampler.apply(inputPadded, 
             inLength + padding, &results[0], resultsCount);
     delete[] inputPadded;
 }

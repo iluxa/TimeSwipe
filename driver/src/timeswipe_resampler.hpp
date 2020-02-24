@@ -15,6 +15,7 @@ class TimeSwipeResampler {
     std::vector<float> buffers[4];
     int upFactor;
     int downFactor;
+    unsigned pad;
     // Coefficients for each input size
     std::map<unsigned,std::unique_ptr<ResamplerState>> states;
 public:

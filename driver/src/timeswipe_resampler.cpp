@@ -2,10 +2,23 @@
 #include "upfirdn.h"
 #include <boost/math/special_functions/bessel.hpp>
 
+static unsigned getPad(unsigned samples) {
+    if (samples >= 24000) return 20;
+    else if (samples >= 20000) return 30;
+    else if (samples >= 12000) return 40;
+    else if (samples >= 9000) return 20;
+    else if (samples >= 6000) return 80;
+    else if (samples >= 3000) return 160;
+    else if (samples >= 2000) return 300;
+
+    return 500;
+}
+
 TimeSwipeResampler::TimeSwipeResampler(int up, int down)
     : upFactor(up)
     , downFactor(down)
 {
+    pad = getPad(upFactor);
 }
 
 static int getGCD ( int num1, int num2 )
@@ -29,6 +42,8 @@ std::vector<Record> TimeSwipeResampler::Resample(std::vector<Record>&& records) 
         }
     }
     int inputSize = buffers[0].size();
+    //Resample big enough slices
+    if (inputSize < 2*pad+1) return std::vector<Record>();
     //TODO: limit size of states
     auto ret = states.emplace(buffers[0].size(), nullptr);
     if (ret.second) {
@@ -49,10 +64,8 @@ std::vector<Record> TimeSwipeResampler::Resample(std::vector<Record>&& records) 
     }
     std::vector<Record> out;
     auto sz = y[0].size();
-    // additional pad stays in buffer
-    unsigned pad = 20;
     for (int j = 0; j < 4; j++) {
-        if (buffers[j].size() > pad) buffers[j].erase(buffers[j].begin(), buffers[j].begin() + buffers[j].size()-pad);
+        if (buffers[j].size() > pad*2) buffers[j].erase(buffers[j].begin(), buffers[j].begin() + buffers[j].size()-pad*2);
     }
     // Remove results related to pad
     int rem_pad = state->outputSize * pad / inputSize;
@@ -205,7 +218,7 @@ ResamplerState::ResamplerState(int upFactor, int downFactor, size_t inputSize) {
   vector<double> coefficients;
   firls ( length - 1, firlsFreqsV, firlsAmplitudeV, coefficients );
   if (TimeSwipe::resample_log) {
-      printf("resample: up: %d down: %d inputSize: %u coefficients:", upFactor, downFactor, inputSize);
+      printf("resample: up: %d down: %d inputSize: %lu coefficients(%lu):", upFactor, downFactor, inputSize, coefficients.size());
       for (const auto& c: coefficients) printf(" %f",c);
       printf("\n");
   }
@@ -238,6 +251,7 @@ ResamplerState::ResamplerState(int upFactor, int downFactor, size_t inputSize) {
 
 //TEST
 #ifdef TIMESWIPE_RESAMPLER_TEST
+bool TimeSwipe::resample_log = false;
 #include <fstream>
 void export_resample(TimeSwipeResampler& resampler, std::vector<Record>&& records) {
     if (records.empty()) return;
@@ -257,13 +271,16 @@ int main(int argc, char** argv) {
     Record rec;
     unsigned counter = 0;
     //static const int chunk_size = 48000*20;
-    static const int chunk_size = 480/32;
+    static const int chunk_size = 3000;
+    //static const int chunk_size = 480000;
+    //unsigned chunk_size = rand()%100+100;
     while (inFile >> rec.Sensors[0] >> rec.Sensors[1] >> rec.Sensors[2] >> rec.Sensors[3]) {
         records.push_back(rec);
         if (++counter>=chunk_size) {
             export_resample(resampler, std::move(records));
             records.clear();
             counter = 0;
+            //chunk_size = rand()%100+100;
         }
     }
     export_resample(resampler, std::move(records));

@@ -42,8 +42,11 @@ std::vector<Record> TimeSwipeResampler::Resample(std::vector<Record>&& records) 
         }
     }
     int inputSize = buffers[0].size();
-    //Resample big enough slices
-    if (inputSize < 2*pad+1) return std::vector<Record>();
+    //process input data with constant slice
+    size_t slice_size = 1000;
+    if (inputSize < slice_size+2*pad) return std::vector<Record>();
+    inputSize = slice_size + 2*pad;
+    //fprintf(stderr, "inputSize: %d\n", inputSize);
     //TODO: limit size of states
     auto ret = states.emplace(buffers[0].size(), nullptr);
     if (ret.second) {
@@ -57,15 +60,16 @@ std::vector<Record> TimeSwipeResampler::Resample(std::vector<Record>&& records) 
           int gcd = getGCD ( upFactor, downFactor );
           int upf = upFactor / gcd;
           int downf = downFactor / gcd;
-        upfirdn(upf, downf, buffers[j], state->h, yy);
+        upfirdn(upf, downf, &buffers[j][0], inputSize, &state->h[0], state->h.size(), yy);
         for (int i = state->delay; i < state->outputSize + state->delay; i++) {
             y[j].push_back ( yy[i] );
         }
     }
     std::vector<Record> out;
     auto sz = y[0].size();
+    // remove processed slice from input data
     for (int j = 0; j < 4; j++) {
-        if (buffers[j].size() > pad*2) buffers[j].erase(buffers[j].begin(), buffers[j].begin() + buffers[j].size()-pad*2);
+        buffers[j].erase(buffers[j].begin(), buffers[j].begin() + slice_size);
     }
     // Remove results related to pad
     int rem_pad = state->outputSize * pad / inputSize;
@@ -262,25 +266,27 @@ void export_resample(TimeSwipeResampler& resampler, std::vector<Record>&& record
 }
 int main(int argc, char** argv) {
     if (argc < 4) {
-        printf("Usage: %s <dump> upFactor downFactor\n", argv[0]);
+        fprintf(stderr, "Usage: %s <dump> upFactor downFactor\n", argv[0]);
         return -1;
     }
     std::ifstream inFile(argv[1]);
-    TimeSwipeResampler resampler(std::atoi(argv[2]), std::atoi(argv[3]));
+    int upFactor = std::atoi(argv[2]);
+    int downFactor = std::atoi(argv[3]);
+    TimeSwipeResampler resampler(upFactor, downFactor);
     std::vector<Record> records;
     Record rec;
     unsigned counter = 0;
     //static const int chunk_size = 48000*20;
-    static const int chunk_size = 3000;
+    //static const int chunk_size = 1000;
     //static const int chunk_size = 480000;
-    //unsigned chunk_size = rand()%100+100;
+    unsigned chunk_size = rand()%100+10;
     while (inFile >> rec.Sensors[0] >> rec.Sensors[1] >> rec.Sensors[2] >> rec.Sensors[3]) {
         records.push_back(rec);
         if (++counter>=chunk_size) {
             export_resample(resampler, std::move(records));
             records.clear();
             counter = 0;
-            //chunk_size = rand()%100+100;
+            chunk_size = rand()%100+10;
         }
     }
     export_resample(resampler, std::move(records));

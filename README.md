@@ -1,4 +1,4 @@
-# TimeSwipe
+# TimeSwipe test
 Firmware and Drivers for PANDA TimeSwipe Boards
 
 # Building firmware and driver

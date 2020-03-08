@@ -1,7 +1,9 @@
 #!/bin/bash
 cd `dirname $0`
 
-build_dir=cmake_deb64
+build_dir=cmake_deb64_2
+pwd
+rmdir $build_dir
 mkdir $build_dir || exit
 cd $build_dir
 cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr ..

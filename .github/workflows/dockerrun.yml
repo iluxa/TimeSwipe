@@ -14,7 +14,9 @@ jobs:
     container: pandaofficial/timeswipe_ubuntu
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v2      
+    - name: Checkout submodules
+      uses: textbook/git-checkout-submodule-action@master
       with:
         remote: true
     - name: Build the Docker image

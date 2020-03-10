@@ -15,10 +15,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-      with:
-        submodules: 'true'
     - name: Build the Docker image
       run: |
+        git submodule update --init
         cd driver
         pwd
         ls -l

@@ -17,10 +17,16 @@ jobs:
     - uses: actions/checkout@v2
     - name: Build the Docker image
       run: |
+        cd driver
         pwd
         ls -l
-        mkdir build
-        cd build
+        mkdir build64
+        cd build64
         cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr ..
         ls -l
         make
+        export destdir="$PWD"/timeswipe_`cat ../version`.aarch64
+        make VERBOSE=1 DESTDIR=$destdir install
+        cp -p -r DEBIAN $destdir
+        dpkg-deb --build $destdir && mv *.deb .. && cd .. && rm -rf $build_dir
+        

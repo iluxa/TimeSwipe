@@ -10,13 +10,13 @@ jobs:
   build:
     name: Upload Release Asset
     runs-on: ubuntu-latest
+    container: pandaofficial/timeswipe_ubuntu
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Build project # This would actually build your project, using zip for an example artifact
         id: build_project
         run: |
-          zip --junk-paths my-artifact README.md
           git clone https://github.com/nlohmann/json driver/3rdParty/nlohmann #XXX: until submodule issue resolved in actions        
           cd driver
           mkdir build64

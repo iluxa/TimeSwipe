@@ -15,10 +15,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Checkout submodules
-      uses: textbook/git-checkout-submodule-action@master
-      with:
-        remote: true
     - name: Build the Docker image
       run: |
         git config --file .gitmodules --get-regexp url | while read url; do

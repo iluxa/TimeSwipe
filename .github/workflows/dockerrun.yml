@@ -11,8 +11,13 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    container: pandaofficial/timeswipe_ubuntu
 
     steps:
     - uses: actions/checkout@v2
     - name: Build the Docker image
-      run: docker run pandaofficial/timeswipe_ubuntu driver/build_deb.sh
+      run: |
+        mkdir build
+        cd build
+        cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr ..
+        make

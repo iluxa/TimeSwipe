@@ -10,8 +10,10 @@ jobs:
   build:
     name: Upload Release Asset
     runs-on: ubuntu-latest
-    container: pandaofficial/timeswipe_ubuntu
+    #container: pandaofficial/timeswipe_ubuntu
     steps:
+      - name: using custom container
+        uses: docker://pandaofficial/timeswipe_ubuntu:latest
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Build project # This would actually build your project, using zip for an example artifact
@@ -56,9 +58,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ build.steps.create_release.outputs.upload_url }}
-          asset_path: ./driver/build64/${{ build.steps.build_project.outputs.deb64 }}
-          asset_name: ${{ build.steps.build_project.outputs.deb64 }}
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./driver/build64/${{ steps.build_project.outputs.deb64 }}
+          asset_name: ${{ steps.build_project.outputs.deb64 }}
           asset_content_type: application/octet-stream
       - name: Upload armv7l
         id: upload-release-armv7l
@@ -66,7 +68,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ build.steps.create_release.outputs.upload_url }}
-          asset_path: ./driver/build32/${{ build.steps.build_project.outputs.deb32 }}
-          asset_name: ${{ build.steps.build_project.outputs.deb32 }}
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./driver/build32/${{ steps.build_project.outputs.deb32 }}
+          asset_name: ${{ steps.build_project.outputs.deb32 }}
           asset_content_type: application/octet-stream

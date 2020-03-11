@@ -58,7 +58,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ jobs.build.steps.create_release.outputs.upload_url }}
           asset_path: ./driver/build64/${{ steps.build_project.outputs.deb64 }}
           asset_name: ${{ steps.build_project.outputs.deb64 }}
           asset_content_type: application/octet-stream

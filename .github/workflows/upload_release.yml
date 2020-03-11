@@ -14,20 +14,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Build project # This would actually build your project, using zip for an example artifact
-        id: build_project
+        #id: build_project
         run: |
-          sudo apt-get -y update && DEBIAN_FRONTEND=noninteractive sudo apt -y install binutils-aarch64-linux-gnu g++-aarch64-linux-gnu gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf make cmake gcc g++ libboost-all-dev git
-          git clone https://github.com/nlohmann/json driver/3rdParty/nlohmann #XXX: until submodule issue resolved in actions        
-          cd driver
-          mkdir build64
-          cd build64
-          cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr ..
-          make
-          export destdir="$PWD"/timeswipe_`cat ../version`.aarch64
-          make VERBOSE=1 DESTDIR=$destdir install
-          cp -p -r DEBIAN $destdir
-          dpkg-deb --build $destdir
+          #sudo apt-get -y update && DEBIAN_FRONTEND=noninteractive sudo apt -y install binutils-aarch64-linux-gnu g++-aarch64-linux-gnu gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf make cmake gcc g++ libboost-all-dev git
+          #git clone https://github.com/nlohmann/json driver/3rdParty/nlohmann #XXX: until submodule issue resolved in actions        
+          #cd driver
+          #mkdir build64
+          #cd build64
+          #cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr ..
+          #make
+          #export destdir="$PWD"/timeswipe_`cat ../version`.aarch64
+          #make VERBOSE=1 DESTDIR=$destdir install
+          #cp -p -r DEBIAN $destdir
+          #dpkg-deb --build $destdir
           # echo ::set-output name=deb32::$(ls *.deb)
+          touch qwe
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1

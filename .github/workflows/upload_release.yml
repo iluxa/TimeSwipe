@@ -16,7 +16,7 @@ jobs:
       - name: Build project # This would actually build your project, using zip for an example artifact
         id: build_project
         run: |
-          apt-get -y update && DEBIAN_FRONTEND=noninteractive apt -y install binutils-aarch64-linux-gnu g++-aarch64-linux-gnu gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf make cmake gcc g++ libboost-all-dev git
+          sudo apt-get -y update && DEBIAN_FRONTEND=noninteractive sudo apt -y install binutils-aarch64-linux-gnu g++-aarch64-linux-gnu gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf make cmake gcc g++ libboost-all-dev git
           git clone https://github.com/nlohmann/json driver/3rdParty/nlohmann #XXX: until submodule issue resolved in actions        
           cd driver
           mkdir build64

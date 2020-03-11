@@ -27,7 +27,7 @@ jobs:
           make VERBOSE=1 DESTDIR=$destdir install
           cp -p -r DEBIAN $destdir
           dpkg-deb --build $destdir
-          echo ::set-output name=deb32::$(ls *.deb)
+          # echo ::set-output name=deb32::$(ls *.deb)
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1

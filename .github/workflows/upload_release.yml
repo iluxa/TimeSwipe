@@ -1,46 +1,18 @@
 on:
   push:
-    # Sequence of patterns matched against refs/tags
-    tags:
-    - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+    branches:
+      - master
 
-name: Issue Release
+name: Workflow
 
 jobs:
-  release:
-    name: Create Github Release
-    if: contains(github.ref, 'tags/v')
-    runs-on: ubuntu-latest
-    steps:
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1.0.0
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        draft: false
-        prerelease: false
-    - name: Output Release URL File
-      run: echo "${{ steps.create_release.outputs.upload_url }}" > release_url.txt
-    - name: Save Release URL File for publish
-      uses: actions/upload-artifact@v1
-      with:
-        name: release_url
-        path: release_url.txt
-  publish_deb:
-    name: Upload Release deb packages
-    needs: [release]
+  build_deb:
     runs-on: ubuntu-latest
     container: pandaofficial/timeswipe_ubuntu
+    name: Build deb
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Load Release URL File from release job
-        uses: actions/download-artifact@v1
-        with:
-            name: release_url
       - name: Build project
         id: build_project
         run: |
@@ -66,47 +38,24 @@ jobs:
           dpkg-deb --build $destdir
           echo ::set-output name=deb32::$(ls *.deb)
           cd ..
-      - name: Get Release File Name & Upload URL
-        id: get_release_info
-        run: |
-            value=`cat release_url/release_url.txt`
-            echo ::set-output name=upload_url::$value
-        env:
-            TAG_REF_NAME: ${{ github.ref }}
-            REPOSITORY_NAME: ${{ github.repository }}
-      - name: Upload aarch64
-        id: upload-release-aarch64
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Save deb32
+        uses: actions/upload-artifact@v1
         with:
-          upload_url: ${{ steps.get_release_info.outputs.upload_url }}
-          asset_path: ./driver/build64/${{ steps.build_project.outputs.deb64 }}
-          asset_name: ${{ steps.build_project.outputs.deb64 }}
-          asset_content_type: application/octet-stream
-      - name: Upload armv7l
-        id: upload-release-armv7l
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: deb32
+          path: ${{ steps.build_project.outputs.deb32 }}
+      - name: Save deb64
+        uses: actions/upload-artifact@v1
         with:
-          upload_url: ${{ steps.get_release_info.outputs.upload_url }}
-          asset_path: ./driver/build32/${{ steps.build_project.outputs.deb32 }}
-          asset_name: ${{ steps.build_project.outputs.deb32 }}
-          asset_content_type: application/octet-stream
+          name: deb64
+          path: ${{ steps.build_project.outputs.deb64 }}
 
-  publish_arch:
-    name: Upload Release arch packages
-    needs: [release]
+  build_arch:
+    name: Build arch
     runs-on: ubuntu-latest
     container: pandaofficial/timeswipe_arch
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Load Release URL File from release job
-        uses: actions/download-artifact@v1
-        with:
-            name: release_url
       - name: Build project
         id: build_project
         run: |
@@ -117,26 +66,63 @@ jobs:
           cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr ..
           make
           export destdir="$PWD"/timeswipe_`cat ../version`
-          cd .. # ./driver
+          cd ..
           chown -R build build64
           cd build64
           sudo -u build makepkg
-          echo ::set-output name=arch64::$(ls *.xz)
-      - name: Get Release File Name & Upload URL
-        id: get_release_info
-        run: |
-            value=`cat release_url/release_url.txt`
-            echo ::set-output name=upload_url::$value
-        env:
-            TAG_REF_NAME: ${{ github.ref }}
-            REPOSITORY_NAME: ${{ github.repository }}
-      - name: Upload arch64
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Save arch64
+        uses: actions/upload-artifact@v1
         with:
-          upload_url: ${{ steps.get_release_info.outputs.upload_url }}
-          asset_path: ./driver/build64/${{ steps.build_project.outputs.arch64 }}
-          asset_name: ${{ steps.build_project.outputs.arch64 }}
-          asset_content_type: application/octet-stream
+          name: arch64
+          path: ${{ steps.build_project.outputs.arch64 }}
+
+  release:
+    name: Create Github Release
+    if: contains(github.ref, 'tags/v')
+    needs: [build_deb build_arch]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1.0.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+    - name: Load deb32
+      uses: actions/download-artifact@v1
+      with:
+        name: deb32
+    - name: Load deb64
+      uses: actions/download-artifact@v1
+      with:
+        name: deb64
+    - name: Load arch64
+      uses: actions/download-artifact@v1
+      with:
+        name: arch64
+    - name: Publish deb32
+        id: publish-deb32
+        uses: csexton/release-asset-action@v2
+        with:
+          pattern: "deb32/*"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          release-url: ${{ steps.create_release.outputs.upload_url }}
+    - name: Publish deb64
+        id: publish-deb64
+        uses: csexton/release-asset-action@v2
+        with:
+          pattern: "deb64/*"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          release-url: ${{ steps.create_release.outputs.upload_url }}
+    - name: Publish arch64
+        id: publish-arch64
+        uses: csexton/release-asset-action@v2
+        with:
+          pattern: "arch64/*"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          release-url: ${{ steps.create_release.outputs.upload_url }}
 

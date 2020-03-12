@@ -1,4 +1,4 @@
-![](https://github.com/iluxa/TimeSwipe/workflows/driver%20build/badge.svg)
+![](https://github.com/iluxa/TimeSwipe/workflows/Workflow/badge.svg)
 
 # TimeSwipe
 Firmware and Drivers for PANDA TimeSwipe Boards

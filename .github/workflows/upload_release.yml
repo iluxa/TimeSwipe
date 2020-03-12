@@ -117,8 +117,10 @@ jobs:
           cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr ..
           make
           export destdir="$PWD"/timeswipe_`cat ../version`
-          cd .. && chown -R build build64 && cd build64 && sudo -u build makepkg && mv *.xz ..
-          cd ..
+          cd .. # ./driver
+          chown -R build build64
+          cd build64
+          sudo -u build makepkg
           echo ::set-output name=arch64::$(ls *.xz)
       - name: Get Release File Name & Upload URL
         id: get_release_info

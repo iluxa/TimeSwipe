@@ -1,5 +1,5 @@
 # 1
-![](workflows/.github/workflows/test.yml/badge.svg)
+![](.github/workflows/test.yml/badge.svg)
 
 # 2
 ![](https://github.com/iluxa/TimeSwipe/workflows/.github/workflows/test.yml/badge.svg)

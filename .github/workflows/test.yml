@@ -11,8 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     container: pandaofficial/timeswipe_ubuntu
     steps:
-    - name: Test build deb64
-      run: |
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Test build deb64
+        run: |
           git clone https://github.com/nlohmann/json driver/3rdParty/nlohmann #XXX: until submodule issue resolved in actions        
           cd driver
           mkdir build64

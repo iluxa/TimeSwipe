@@ -105,24 +105,21 @@ jobs:
       with:
         name: arch64
     - name: Publish deb32
-        id: publish-deb32
-        uses: csexton/release-asset-action@v2
-        with:
-          pattern: "deb32/*"
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          release-url: ${{ steps.create_release.outputs.upload_url }}
+      uses: csexton/release-asset-action@v2
+      with:
+        pattern: "deb32/*"
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        release-url: ${{ steps.create_release.outputs.upload_url }}
     - name: Publish deb64
-        id: publish-deb64
-        uses: csexton/release-asset-action@v2
-        with:
-          pattern: "deb64/*"
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          release-url: ${{ steps.create_release.outputs.upload_url }}
+      uses: csexton/release-asset-action@v2
+      with:
+        pattern: "deb64/*"
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        release-url: ${{ steps.create_release.outputs.upload_url }}
     - name: Publish arch64
-        id: publish-arch64
-        uses: csexton/release-asset-action@v2
-        with:
-          pattern: "arch64/*"
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          release-url: ${{ steps.create_release.outputs.upload_url }}
+      uses: csexton/release-asset-action@v2
+      with:
+        pattern: "arch64/*"
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        release-url: ${{ steps.create_release.outputs.upload_url }}
 

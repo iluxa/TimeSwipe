@@ -1,7 +1,8 @@
 name: Publish Docker timeswipe_ubuntu
 on:
   push:
-    tags:
+    branches:
+      - master
     paths:
       - 'driver/Dockerfile.ubuntu'
 jobs:

@@ -1,4 +1,6 @@
-# TimeSwipe test1
+![](.github/workflows/test.yml/badge.svg)
+
+# TimeSwipe
 Firmware and Drivers for PANDA TimeSwipe Boards
 
 # Building firmware and driver

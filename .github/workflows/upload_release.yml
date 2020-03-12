@@ -79,7 +79,7 @@ jobs:
   release:
     name: Create Github Release
     if: contains(github.ref, 'tags/v')
-    needs: [build_deb build_arch]
+    needs: [build_deb, build_arch]
     runs-on: ubuntu-latest
     steps:
     - name: Create Release

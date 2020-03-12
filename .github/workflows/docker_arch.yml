@@ -1,6 +1,7 @@
 name: Publish Docker timeswipe_arch
 on:
   push:
+    tags:
     paths:
       - 'driver/Dockerfile.arch'
 jobs:

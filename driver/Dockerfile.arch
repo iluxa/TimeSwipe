@@ -7,7 +7,3 @@ RUN useradd build
 
 # aarch64 comiler doesn't "look" into aarch64-linux-gnu dir
 RUN ln -s /usr/include/boost /usr/aarch64-linux-gnu/include/boost
-
-
-
-

@@ -39,7 +39,6 @@ jobs:
           cp -p -r DEBIAN $destdir
           dpkg-deb --build $destdir
           echo ::set-output name=deb32::$(ls *.deb)
-          ls -l * ##XXX
           cd ..
       - name: Save deb32
         uses: actions/upload-artifact@v1
@@ -74,7 +73,6 @@ jobs:
           cd build64
           sudo -u build makepkg
           echo ::set-output name=arch64::$(ls *.xz)
-          ls -l * ##XXX
       - name: Save arch64
         uses: actions/upload-artifact@v1
         with:

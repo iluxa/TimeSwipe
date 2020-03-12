@@ -43,12 +43,12 @@ jobs:
         uses: actions/upload-artifact@v1
         with:
           name: deb32
-          path: ${{ steps.build_project.outputs.deb32 }}
+          path: ./driver/build32/${{ steps.build_project.outputs.deb32 }}
       - name: Save deb64
         uses: actions/upload-artifact@v1
         with:
           name: deb64
-          path: ${{ steps.build_project.outputs.deb64 }}
+          path: ./driver/build64/${{ steps.build_project.outputs.deb64 }}
 
   build_arch:
     name: Build arch
@@ -77,7 +77,7 @@ jobs:
         uses: actions/upload-artifact@v1
         with:
           name: arch64
-          path: ${{ steps.build_project.outputs.arch64 }}
+          path: ./driver/build64/${{ steps.build_project.outputs.arch64 }}
 
   release:
     name: Create Github Release

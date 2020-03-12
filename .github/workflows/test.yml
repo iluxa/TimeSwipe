@@ -17,6 +17,7 @@ jobs:
           cd driver
           mkdir build64
           cd build64
+          ls -l ..
           cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr ..
           make
           export destdir="$PWD"/timeswipe_`cat ../version`.aarch64

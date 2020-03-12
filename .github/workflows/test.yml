@@ -12,7 +12,7 @@ jobs:
     container: pandaofficial/timeswipe_ubuntu
     steps:
     - name: Test build deb64
-        run: |
+      run: |
           git clone https://github.com/nlohmann/json driver/3rdParty/nlohmann #XXX: until submodule issue resolved in actions        
           cd driver
           mkdir build64

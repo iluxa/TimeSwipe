@@ -30,7 +30,7 @@ jobs:
         name: release_url
         path: release_url.txt
   publish_deb:
-    name: Upload Release Assets
+    name: Upload Release deb packages
     needs: [release]
     runs-on: ubuntu-latest
     container: pandaofficial/timeswipe_ubuntu
@@ -94,3 +94,47 @@ jobs:
           asset_path: ./driver/build32/${{ steps.build_project.outputs.deb32 }}
           asset_name: ${{ steps.build_project.outputs.deb32 }}
           asset_content_type: application/octet-stream
+
+  publish_arch:
+    name: Upload Release arch packages
+    needs: [release]
+    runs-on: ubuntu-latest
+    container: pandaofficial/timeswipe_arch
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Load Release URL File from release job
+        uses: actions/download-artifact@v1
+        with:
+            name: release_url
+      - name: Build project
+        id: build_project
+        run: |
+          git clone https://github.com/nlohmann/json driver/3rdParty/nlohmann #XXX: until submodule issue resolved in actions        
+          cd driver
+          mkdir build64
+          cd build64
+          cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr ..
+          make
+          export destdir="$PWD"/timeswipe_`cat ../version`
+          cd .. && chown -R build build64 && cd build64 && sudo -u build makepkg && mv *.xz ..
+          cd ..
+          echo ::set-output name=arch64::$(ls *.xz)
+      - name: Get Release File Name & Upload URL
+        id: get_release_info
+        run: |
+            value=`cat release_url/release_url.txt`
+            echo ::set-output name=upload_url::$value
+        env:
+            TAG_REF_NAME: ${{ github.ref }}
+            REPOSITORY_NAME: ${{ github.repository }}
+      - name: Upload arch64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.get_release_info.outputs.upload_url }}
+          asset_path: ./driver/build64/${{ steps.build_project.outputs.arch64 }}
+          asset_name: ${{ steps.build_project.outputs.arch64 }}
+          asset_content_type: application/octet-stream
+

@@ -1,4 +1,5 @@
 #include "board.hpp"
+#include "defs.h"
 #include <nlohmann/json.hpp>
 
 // RPI GPIO FUNCTIONS
@@ -19,7 +20,7 @@ void initGPIOOutput(unsigned pin)
     pullGPIO(pin, 0);
 }
 
-void init(int sensorType)
+void init(int mode)
 {
     initGPIOInput(DATA0);
     initGPIOInput(DATA1);
@@ -44,8 +45,8 @@ void init(int sensorType)
     setGPIOHigh(RESET);
 
     // SPI Communication
-    // // Select Sensor type
-    BoardInterface::get()->setBridge(sensorType);
+    // // Select Mode
+    BoardInterface::get()->setMode(mode);
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
     // // Start Measurement
@@ -93,36 +94,110 @@ unsigned int readAllGPIO()
     return (*(gpio + 13) & ALL_32_BITS_ON); 
 }
 
+static std::mutex boardMtx;
 
-BoardEvents readBoardEvents()
+std::list<TimeSwipeEvent> readBoardEvents()
 {
-    BoardEvents ret;
+    std::list<TimeSwipeEvent> events;
+    std::lock_guard<std::mutex> lock(boardMtx);
+#if NOT_RPI
+    return events;
+#endif
     std::string data;
     if (BoardInterface::get()->getEvents(data) && !data.empty()) {
         if (data[data.length()-1] == 0xa ) data = data.substr(0, data.size()-1);
 
-        if (data.empty()) return ret;
+        if (data.empty()) return events;
 
-        //XXX: SPI sometimes returns errors like "!obj_not_found!", "!protocol_error!" - fix this:
-        if (data[0] == '!') return ret;
+        try {
+            auto j = nlohmann::json::parse(data);
+            auto it_btn = j.find("Button");
+            if (it_btn != j.end() && it_btn->is_boolean()) {
+                auto it_cnt = j.find("ButtonStateCnt");
+                if (it_cnt != j.end() && it_cnt->is_number()) {
+                    events.push_back(TimeSwipeEvent::Button(it_btn->get<bool>(), it_cnt->get<int>()));
+                }
+            }
 
-        auto j = nlohmann::json::parse(data);
-        auto it_btn = j.find("Button");
-        if (it_btn != j.end() && it_btn->is_boolean() && it_btn->get<bool>()) {
-            auto it_cnt = j.find("ButtonStateCnt");
-            if (it_cnt != j.end() && it_cnt->is_number()) {
-                ret.button = true;
-                ret.buttonCounter = it_cnt->get<unsigned>();
+            auto it = j.find("Gain");
+            if (it != j.end() && it->is_number()) {
+                events.push_back(TimeSwipeEvent::Gain(it->get<int>()));
+            }
+
+            it = j.find("SetSecondary");
+            if (it != j.end() && it->is_number()) {
+                events.push_back(TimeSwipeEvent::SetSecondary(it->get<int>()));
+            }
+
+            it = j.find("Bridge");
+            if (it != j.end() && it->is_number()) {
+                events.push_back(TimeSwipeEvent::Bridge(it->get<int>()));
+            }
+
+            it = j.find("Record");
+            if (it != j.end() && it->is_number()) {
+                events.push_back(TimeSwipeEvent::Record(it->get<int>()));
+            }
+
+            it = j.find("Offset");
+            if (it != j.end() && it->is_number()) {
+                events.push_back(TimeSwipeEvent::Offset(it->get<int>()));
+            }
+
+            it = j.find("Mode");
+            if (it != j.end() && it->is_number()) {
+                events.push_back(TimeSwipeEvent::Mode(it->get<int>()));
             }
         }
+        catch (nlohmann::json::parse_error& e)
+        {
+            // output exception information
+            std::cerr << "readBoardEvents: json parse failed data:" << data << "error:" << e.what() << '\n';
+        }
     }
-    return ret;
+    return events;
 }
 
 std::string readBoardGetSettings(const std::string& request, std::string& error) {
+    std::lock_guard<std::mutex> lock(boardMtx);
+#if NOT_RPI
+    return request;
+#endif
     return BoardInterface::get()->getGetSettings(request, error);
 }
 
 std::string readBoardSetSettings(const std::string& request, std::string& error) {
+    std::lock_guard<std::mutex> lock(boardMtx);
+#if NOT_RPI
+    return request;
+#endif
     return BoardInterface::get()->getSetSettings(request, error);
+}
+
+bool BoardStartPWM(uint8_t num, uint32_t frequency, uint32_t high, uint32_t low, uint32_t repeats, float duty_cycle) {
+    std::lock_guard<std::mutex> lock(boardMtx);
+#if NOT_RPI
+    return false;
+#endif
+    return BoardInterface::get()->startPWM(num, frequency, high, low, repeats, duty_cycle);
+}
+
+bool BoardStopPWM(uint8_t num) {
+    std::lock_guard<std::mutex> lock(boardMtx);
+#if NOT_RPI
+    return false;
+#endif
+    return BoardInterface::get()->stopPWM(num);
+}
+
+bool BoardGetPWM(uint8_t num, bool& active, uint32_t& frequency, uint32_t& high, uint32_t& low, uint32_t& repeats, float& duty_cycle) {
+    std::lock_guard<std::mutex> lock(boardMtx);
+#if NOT_RPI
+    return false;
+#endif
+    return BoardInterface::get()->getPWM(num, active, frequency, high, low, repeats, duty_cycle);
+}
+
+void BoardTraceSPI(bool val) {
+    BoardInterface::trace_spi = val;
 }

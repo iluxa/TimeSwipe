@@ -10,7 +10,7 @@ Copyright (c) 2019-2020 Panda Team
 #include "RawBinStorage.h"
 #include "SamNVMCTRL.h"
 
-#define STORAGE_STAMP 03032020
+#define STORAGE_STAMP 10042020
 CRawBinStorage::CRawBinStorage()
 {
     m_Dict.reserve(10);
@@ -22,6 +22,9 @@ CRawBinStorage::CRawBinStorage()
 void CRawBinStorage::__ser(void *pVar, const std::type_info &ti)
 {
 
+    if(m_bDefaultSettingsOrder || !m_bDownloading)
+        return;
+
     //assume downloading mode only, grab data:
     unsigned int dsize=4;
     struct CRawBinStorageItem item={(uint8_t *)pVar, dsize};
@@ -32,12 +35,25 @@ void CRawBinStorage::__ser(void *pVar, const std::type_info &ti)
         CSamNVMCTRL::Instance().ReadSmartEEPROM(m_nOffset, (uint8_t *)pVar, dsize);
         m_nOffset+=dsize;
     }
+}
 
+void CRawBinStorage::SetDefaults()
+{
+    m_bDownloading=true;
+    m_bDefaultSettingsOrder=true;
+
+    for(const auto &obj : m_Dict)
+    {
+        obj->Serialize(*this);
+    }
+
+    m_bDefaultSettingsOrder=false;
 }
 
 void CRawBinStorage::Load()
 {
     m_bDownloading=true;
+    m_bDefaultSettingsOrder=false;
 
     unsigned int stamp=0;
 
@@ -46,6 +62,7 @@ void CRawBinStorage::Load()
     m_bStorageIsFilled=(STORAGE_STAMP==stamp);
     m_nOffset=sizeof(stamp);
 
+    m_Items.clear(); //the items list will be renewed
     for(const auto &obj : m_Dict)
     {
         obj->Serialize(*this);

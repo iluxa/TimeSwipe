@@ -66,7 +66,7 @@ protected:
     /*!
      * \brief The LED blinking period, milliseconds
      */
-    unsigned int  m_BlinkPeriod_mS=400;
+    unsigned long  m_BlinkPeriod_mS=400;
 
     /*!
      * \brief Setpoint color of the LED
@@ -94,13 +94,15 @@ protected:
      */
     int m_BlinkingPeriodLimit=0;
 
+public:
+
     /*!
      * \brief Obtains a LED zero-based index to be used in 3rd-party library (Adafruit)
      * \return A zero based index for Adafruit
      */
     inline int get_zerob_ind(){ return (4 - static_cast<int>(m_nLED)); }
 
-public:
+//public:
 
     /*!
      * \brief The class constructor
@@ -142,6 +144,11 @@ public:
     {
         m_bBlinking=how;
     }
+    void SetBlinkPeriodAndCount(unsigned long  BlinkPeriod_mS, unsigned long BlinkCount=0)
+    {
+        m_BlinkPeriod_mS=BlinkPeriod_mS;
+        m_BlinkingPeriodLimit=BlinkCount;
+    }
 
     /*!
      * \brief The object state update method
@@ -174,6 +181,10 @@ protected:
     static bool              m_bLEDisChanged;
 
 public:
+    enum{
+        maxLEDs=4
+    };
+
 
     /*!
       * \brief Generates a random color

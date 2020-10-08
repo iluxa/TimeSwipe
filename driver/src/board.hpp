@@ -42,11 +42,6 @@ static const uint32_t PI_STATUS_POSITION = 1UL << PI_OK;
 static const uint32_t FAIL_POSITION = 1UL << FAIL;
 static const uint32_t BUTTON_POSITION = 1UL << BUTTON;
 
-struct BoardEvents {
-    bool button = false;
-    unsigned buttonCounter = 0;
-};
-
 void pullGPIO(unsigned pin, unsigned high);
 void initGPIOInput(unsigned pin);
 void initGPIOOutput(unsigned pin);
@@ -58,9 +53,13 @@ void resetAllGPIO();
 void sleep55ns();
 void sleep8ns();
 unsigned int readAllGPIO();
-BoardEvents readBoardEvents();
+std::list<TimeSwipeEvent> readBoardEvents();
 std::string readBoardGetSettings(const std::string& request, std::string& error);
 std::string readBoardSetSettings(const std::string& request, std::string& error);
+bool BoardStartPWM(uint8_t num, uint32_t frequency, uint32_t high, uint32_t low, uint32_t repeats, float duty_cycle);
+bool BoardStopPWM(uint8_t num);
+bool BoardGetPWM(uint8_t num, bool& active, uint32_t& frequency, uint32_t& high, uint32_t& low, uint32_t& repeats, float& duty_cycle);
+void BoardTraceSPI(bool val);
 
 #include "board.cpp"
 

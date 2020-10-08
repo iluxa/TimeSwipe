@@ -1,4 +1,8 @@
 #include "reader.hpp"
+#include "defs.h"
+#if NOT_RPI
+#include <math.h>
+#endif
 
 struct GPIOData
 {
@@ -69,7 +73,8 @@ constexpr bool getBit(uint8_t byte, uint8_t N)
     return (byte & (1UL << N));
 }
 
-Record convertChunkToRecord(const std::array<uint8_t, CHUNK_SIZE_IN_BYTE> &chunk, const std::array<int, 4> &offset, const std::array<int, 4> &gain, const std::array<double, 4> &transmission)
+template <class T>
+void convertChunkToRecord(const std::array<uint8_t, CHUNK_SIZE_IN_BYTE> &chunk, const std::array<int, 4> &offset, const std::array<float, 4> &mfactor, T& data)
 {
     size_t count = 0;
     std::vector<uint16_t> sensors(4, 0);
@@ -90,13 +95,6 @@ Record convertChunkToRecord(const std::array<uint8_t, CHUNK_SIZE_IN_BYTE> &chunk
         count++;
     }
 
-    Record data;
-
-    // data.Sensors[0] = (float)(sensors[0] - offset[0]) / gain[0] / transmission[0];
-    // data.Sensors[1] = (float)(sensors[1] - offset[1]) / gain[1] / transmission[1];
-    // data.Sensors[2] = (float)(sensors[2] - offset[2]) / gain[2] / transmission[2];
-    // data.Sensors[3] = (float)(sensors[3] - offset[3]) / gain[3] / transmission[3];
-
     for (size_t i = 0; i < 4; ++i)
     {
         //##########################//
@@ -109,10 +107,8 @@ Record convertChunkToRecord(const std::array<uint8_t, CHUNK_SIZE_IN_BYTE> &chunk
         sensorOld[i] = sensors[i];
         //##########################//
 
-        data.Sensors[i] = (float)(sensors[i] - offset[i]) / gain[i] / transmission[i];
+        data[i].push_back((float)(sensors[i] - offset[i]) * mfactor[i]);
     }
-
-    return data;
 }
 
 struct RecordReader
@@ -120,16 +116,29 @@ struct RecordReader
     std::array<uint8_t, CHUNK_SIZE_IN_BYTE> currentChunk;
     size_t bytesRead{0};
     bool isFirst{true};
+    size_t lastRead = 0;
 
-    int sensorType;
-    std::array<int, 4> offset;
-    std::array<int, 4> gain;
-    std::array<double, 4> transmission;
+    int mode = 0;
+    std::array<int, 4> offset = {0, 0, 0, 0};
+    std::array<float, 4> gain = {1.0, 1.0, 1.0, 1.0};
+    std::array<float, 4> transmission = {1.0, 1.0, 1.0, 1.0};
+    std::array<float, 4> mfactor;
+
+#if NOT_RPI
+    std::chrono::steady_clock::time_point emulPointBegin;
+    std::chrono::steady_clock::time_point emulPointEnd;
+    uint64_t emulSent = 0;
+    static constexpr size_t emulRate = 48000;
+#endif
 
     // read records from hardware buffer
-    std::vector<Record> read()
+    SensorsData read()
     {
-        std::vector<Record> out;
+#if NOT_RPI
+        return readEmulated();
+#endif
+        SensorsData out;
+        out.reserve(lastRead*2);
         int lastTCO;
         int currentTCO;
 
@@ -152,7 +161,7 @@ struct RecordReader
 
             if (bytesRead == CHUNK_SIZE_IN_BYTE)
             {
-                out.push_back(convertChunkToRecord(currentChunk, offset, gain, transmission));
+                convertChunkToRecord(currentChunk, offset, mfactor, out.data());
                 bytesRead = 0;
             }
 
@@ -173,6 +182,7 @@ struct RecordReader
         sleep55ns();
         sleep55ns();
 
+        lastRead = out.DataSize();
         return out;
     }
 
@@ -184,16 +194,59 @@ struct RecordReader
 
     void setup()
     {
+#if NOT_RPI
+        return;
+#endif
         setup_io();
     }
 
     void start()
     {
-        init(sensorType);
+        for (size_t i = 0; i < mfactor.size(); i++)
+        {
+            mfactor[i] = gain[i] * transmission[i];
+        }
+#if NOT_RPI
+        emulPointBegin = std::chrono::steady_clock::now();
+        emulSent = 0;
+        return;
+#endif
+        init(mode);
     }
 
     void stop()
     {
+#if NOT_RPI
+        return;
+#endif
         shutdown();
     }
+
+#if NOT_RPI
+    double angle = 0.0;
+    SensorsData readEmulated()
+    {
+        SensorsData out;
+        auto& data = out.data();
+        while (true) {
+            emulPointEnd = std::chrono::steady_clock::now();
+            uint64_t diff_us = std::chrono::duration_cast<std::chrono::microseconds>(emulPointEnd - emulPointBegin).count();
+            uint64_t wouldSent = diff_us * emulRate / 1000 / 1000;
+            if (wouldSent > emulSent) {
+                while (emulSent++ < wouldSent) {
+                    static constexpr int NB_OF_SAMPLES = emulRate;
+                    auto val = int(3276 * sin(angle) + 32767);
+                    angle += (2.0 * M_PI) / NB_OF_SAMPLES;
+                    data[0].push_back(val);
+                    data[1].push_back(val);
+                    data[2].push_back(val);
+                    data[3].push_back(val);
+                }
+                break;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        }
+        return out;
+    }
+#endif
 };

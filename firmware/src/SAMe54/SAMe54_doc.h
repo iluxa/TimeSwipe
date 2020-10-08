@@ -18,10 +18,19 @@
  *  but require a clock generator to be properly tuned and connected. For this purpose a CSamCLK was designed.
  *  A CSamCLK::Factory() used to find free clock generator, reserve it and provide class methods for setup.
  *
+ * <H4> Timers/Counters </H4>
+ *
+ *  CSamTC - a realization os SAM's TC (Timer-Counter)
+ *
+ * <H4> PORT(digital pins IO) control </H4>
+ *
+ *  CSamPORT, CSamPin - defines Port Groups and Port Pins of the SAME54, single pin control class and methods for multiplexing pins to various peripherals like Sercom
+ *
  * <H4> ADC & DAC </H4>
  *
  *  CSamADCchan and CSamADCcntr are used to control SAME54's ADCs.
  *  CSamDACcntr is used to control SAME54's DACs
+ *  CSamTempSensor is used to measure SAME54's core temperature
  *
  * <H4> QSPI </H4>
  *
@@ -35,11 +44,7 @@
  * CSamSercom provides the basic functionality of SERCOM mainly dealing with interrupt processing, enabling and connecting corresponding
  * CSamCLK (Generic Clock controller)
  *
- * CSamSPI is a basic class providing functionality for external communication via SPI with integrated flow-control (CSyncSerComFSM)
- *
- * CSamSPIsc2 - a concrete realizaion of CSamSPI for SERCOM2 and its pinout
- *
- * CSamSPIsc7 - a concrete realizaion of CSamSPI for SERCOM7 and its pinout
+ * CSamSPIbase - the class implements basic functionality of SAME54 Sercom SPI
  *
  * CSamI2Cmem - a realization of CAT2430 EEPROM chip emulation (realizations for concrete pinouts are CSamI2CmemHAT & CSamI2Cmem8Pin)
  *
@@ -48,10 +53,14 @@
  * <H4> Factory calibration settings </H4>
  *
  * NVMscpage - an interface for reading SAME54 factory calibration settings
+ *
+ * <H4> DMA </H4>
+ *
+ * CSamDMABlock, CSamDMAChannel, CSamDMAC - implement basic DMA functionality
  * 
  * <H4> Nonvolatile Memory Controller </H4>
  *
- * CSamNVMCTRL - implements SAM's Nonvolatile Memory Controller with an interface for SmartEEPROM
+ * CSamNVMCTRL - implements SAM's Nonvolatile Memory Controller with an interface to SmartEEPROM
  */
  
  

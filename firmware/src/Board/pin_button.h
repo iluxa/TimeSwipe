@@ -17,8 +17,12 @@ Copyright (c) 2019 Panda Team
 #include "os.h"
 #include "button.h"
 
+
+#define LONG_CLICK_ON_PRESS
+
+template <class T>
 /*!
- * \brief An implementation template of a button which uses digital pin state as an input signal with a debouncing code
+ * \brief The template of a button which uses digital pin state as an input signal with a debouncing code
  * \details A raw signal is acquired via pure virtual function bool get_signal(void) which must be overridden
  * in the derived class. To remove the signal noise (debouncing) a simple 1st order digital filter is used.
  * When filtered signal level drops down below m_low_trhold the "released" state is established.
@@ -32,17 +36,17 @@ protected:
     /*!
      * \brief Low threshold level of a filtered signal level to detect "released" state
      */
-	float m_low_trhold=0.2f;
+    float m_low_trhold=0.05f;
 
     /*!
      * \brief High threshold level of a filtered signal level to detect "pressed" state
      */
-	float m_high_trhold=0.8f;
+    float m_high_trhold=0.95f;
 
     /*!
-     * \brief 1st order digital filter time constant, seconds
+     * \brief 1st order digital filter pre-calculated factor
      */
-	float m_filter_t_Sec=0.018f;
+    float m_filter_factor=1.0f/(0.013f*1000.0f);
 	
     /*!
      * \brief A filtered signal level
@@ -55,9 +59,59 @@ protected:
     unsigned long m_last_time_upd=os::get_tick_mS();
 
     /*!
+     * \brief The timestamp of last button press, mSec
+     */
+    unsigned long m_press_time_stamp_mS;
+
+    /*!
+     * \brief The timestamp of last button release, mSec
+     */
+    unsigned long m_release_time_stamp_mS;
+
+    /*!
+     * \brief The current click (press/release) duration, mSec
+     */
+    unsigned long m_click_duration_mS;
+
+    /*!
+     * \brief The time interval between two consecutive clicks
+     */
+    unsigned long m_interclick_time_span_mS;
+
+    /*!
+     * \brief The first short click of double-click detection flag
+     */
+    bool m_bFirstClickOfDouble=false;
+
+    /*!
+     * \brief "Long Click" was set
+     */
+    bool m_bLongClickIsSet=false;
+
+    /*!
+     * \brief "Very Long Click" was set
+     */
+    bool m_bVeryLongClickIsSet=false;
+
+    /*!
+     * \brief The maximum duration of the Short Click (minimum duration of the Long Click)
+     */
+    unsigned long m_short_click_max_duration_mS=1200;
+
+    /*!
+     * \brief The Double Click maximum duration (single click + interclick time span)
+     */
+    unsigned long m_double_click_trhold_mS=400;
+
+    /*!
+     * \brief The Very Long Click minimum duration, mSec
+     */
+    unsigned long m_very_long_click_duration_mS=6000;
+
+    /*!
      * \brief Minimum time between two consecutive updates
      */
-	unsigned long m_upd_quant=10;
+    unsigned long m_upd_quant=4;
 	
     /*!
      * \brief Current state of the button
@@ -73,13 +127,19 @@ protected:
      * \brief Acquires a raw signal level from a pin. The function must be implemented in derived class
      * \return The signal level: true=pressed, false=released.
      */
-	virtual bool get_signal(void)=0;
+    bool get_signal(void)
+    {
+        return static_cast<T*>(this)->impl_get_signal();
+    }
 
     /*!
      * \brief Generates a button event. The function must be implemented in derived class
      * \param nState The button state: pressed=typeButtonState::pressed or released=typeButtonState::released
      */
-	virtual void send_event(typeButtonState nState)=0;
+    void on_state_changed(typeButtonState nState)
+    {
+        static_cast<T*>(this)->impl_on_state_changed(nState);
+    }
 	
 public:
 
@@ -98,7 +158,7 @@ public:
         m_last_time_upd=os::get_tick_mS();
 			
         //! get the signal level and apply a 1-st order digital filter
-        m_level+=( (get_signal() ? 1.0f:0.0f) - m_level ) * ( (float)elapsed ) / (m_filter_t_Sec*1000.0f);
+        m_level+=( (get_signal() ? 1.0f:0.0f) - m_level ) * ( (float)elapsed ) * m_filter_factor;
 
         //! determine the button state based on filtered signal level
 		if(m_level>=m_high_trhold)
@@ -110,11 +170,87 @@ public:
 			m_cur_state=typeButtonState::released;
 		}	
 
+
+        if(typeButtonState::pressed==m_prev_state)
+        {
+            unsigned long pressing_time=os::get_tick_mS()-m_press_time_stamp_mS;
+            if(!m_bLongClickIsSet)
+            {
+                if(pressing_time>m_short_click_max_duration_mS)
+                {
+                    m_bFirstClickOfDouble=false;
+                    m_bLongClickIsSet=true;
+                    on_state_changed(typeButtonState::long_click);
+                }
+            }
+            if(!m_bVeryLongClickIsSet)
+            {
+                if(pressing_time>m_very_long_click_duration_mS)
+                {
+                    m_bFirstClickOfDouble=false;
+                    m_bVeryLongClickIsSet=true;
+                    on_state_changed(typeButtonState::very_long_click);
+                }
+            }
+        }
+        else if(m_bFirstClickOfDouble)
+        {
+            if( (os::get_tick_mS()-m_release_time_stamp_mS)>m_double_click_trhold_mS )
+            {
+                m_bFirstClickOfDouble=false;
+                on_state_changed(typeButtonState::short_click);
+            }
+        }
+
+
         //! if the state differs from previous state, generate a button event
 		if(m_prev_state!=m_cur_state)
-		{
-			m_prev_state=m_cur_state;
-			send_event(m_cur_state);
+        {
+            if(typeButtonState::pressed==m_cur_state)
+            {
+                m_press_time_stamp_mS=os::get_tick_mS();
+                m_interclick_time_span_mS=m_press_time_stamp_mS-m_release_time_stamp_mS;
+            }
+            else
+            {
+                m_bLongClickIsSet=false;
+                m_bVeryLongClickIsSet=false;
+
+                m_release_time_stamp_mS=os::get_tick_mS();
+                m_click_duration_mS=m_release_time_stamp_mS-m_press_time_stamp_mS;
+
+                //this is a click:
+                if(m_click_duration_mS<m_short_click_max_duration_mS)
+                {
+                    if(m_click_duration_mS<m_double_click_trhold_mS)
+                    {
+                        if(m_bFirstClickOfDouble)
+                        {
+                            if(m_interclick_time_span_mS<m_double_click_trhold_mS)
+                            {
+                                on_state_changed(typeButtonState::double_click);
+                            }
+                            m_bFirstClickOfDouble=false;
+                        }
+                        else
+                        {
+                            m_bFirstClickOfDouble=true;
+                        }
+                    }
+                    else
+                    {
+                        on_state_changed(typeButtonState::short_click);
+                        m_bFirstClickOfDouble=false;
+                    }
+                }
+                else
+                {
+                    m_bFirstClickOfDouble=false;
+                }
+            }
+
+            on_state_changed(m_cur_state);
+            m_prev_state=m_cur_state;
 		}
 	}
 };

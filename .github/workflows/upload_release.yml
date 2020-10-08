@@ -18,7 +18,7 @@ jobs:
       - name: Build project
         id: build_project
         run: |
-          git clone https://github.com/nlohmann/json driver/3rdParty/nlohmann #XXX: until submodule issue resolved in actions        
+          git clone https://github.com/nlohmann/json driver/3rdParty/nlohmann #XXX: until submodule issue resolved in actions
           cd driver
           mkdir build64
           cd build64
@@ -61,7 +61,7 @@ jobs:
       - name: Build project
         id: build_project
         run: |
-          git clone https://github.com/nlohmann/json driver/3rdParty/nlohmann #XXX: until submodule issue resolved in actions        
+          git clone https://github.com/nlohmann/json driver/3rdParty/nlohmann #XXX: until submodule issue resolved in actions
           cd driver
           mkdir build64
           cd build64

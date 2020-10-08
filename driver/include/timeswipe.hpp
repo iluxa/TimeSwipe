@@ -17,7 +17,7 @@ class SensorsData {
     using CONTAINER = std::array<std::vector<float>, SENSORS>;
 public:
     /**
-     * \brief Get number of sensors
+     * \brief Get number of sensors1
      *
      *
      * @return number of sensors
